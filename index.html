@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Incremental</title>
+    <style>
+        body {
+            background: black;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+            margin-top: 40px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simple Incremental</h1>
+    <p>Points: <span id="points">0</span></p>
+
+    <button onclick="clickGain()">Click</button>
+    <br>
+
+    <button onclick="buyClickUpgrade()">Upgrade: +1 per click (Cost: <span id='clickCost'>10</span>)</button>
+    <br>
+
+    <button onclick="buyAuto()">Upgrade: +1 per second (Cost: <span id='autoCost'>25</span>)</button>
+    <br>
+
+    <button onclick="reboot()">Reboot (Reset for Reboot Points)</button>
+    <p>Reboot Points: <span id="rebootPoints">0</span></p>
+
+<script>
+let points = 0;
+let pointsPerClick = 1;
+let pointsPerSecond = 0;
+
+let clickCost = 10;
+let autoCost = 25;
+
+let rebootPoints = 0;
+
+function update() {
+    document.getElementById("points").innerText = points;
+    document.getElementById("clickCost").innerText = clickCost;
+    document.getElementById("autoCost").innerText = autoCost;
+    document.getElementById("rebootPoints").innerText = rebootPoints;
+}
+
+function clickGain() {
+    points += pointsPerClick;
+    update();
+}
+
+function buyClickUpgrade() {
+    if (points >= clickCost) {
+        points -= clickCost;
+        pointsPerClick += 1;
+        clickCost = Math.floor(clickCost * 1.5);
+        update();
+    }
+}
+
+function buyAuto() {
+    if (points >= autoCost) {
+        points -= autoCost;
+        pointsPerSecond += 1;
+        autoCost = Math.floor(autoCost * 1.6);
+        update();
+    }
+}
+
+setInterval(() => {
+    points += pointsPerSecond;
+    update();
+}, 1000);
+
+function reboot() {
+    if (points >= 1000) {
+        rebootPoints += 1;
+        points = 0;
+        pointsPerClick = 1;
+        pointsPerSecond = 0;
+
+        clickCost = 10;
+        autoCost = 25;
+
+        update();
+    } else {
+        alert("You need 1000 points to reboot!");
+    }
+}
+
+update();
+</script>
+
+</body>
+</html>
