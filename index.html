@@ -1,46 +1,91 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Incremental</title>
+<title>Simple Incremental Ultra</title>
 <style>
 body {
     background: black;
     color: white;
     font-family: Arial, sans-serif;
     text-align: center;
-    padding: 40px;
+    padding: 30px;
 }
 button {
     background: red;
     border: none;
     color: white;
     padding: 15px 30px;
-    font-size: 20px;
-    margin: 10px;
+    font-size: 16px;
+    margin: 8px;
     border-radius: 10px;
     cursor: pointer;
 }
 .stats {
     font-size: 18px;
-    margin: 10px;
+    margin: 8px;
+}
+.progress {
+    width: 200px;
+    height: 15px;
+    background: gray;
+    margin: 5px auto;
+    border-radius: 5px;
+}
+.progress-inner {
+    height: 100%;
+    background: limegreen;
+    width: 0%;
+    border-radius: 5px;
 }
 </style>
 </head>
 <body>
 
-<h1>Simple Incremental</h1>
+<h1>Simple Incremental Ultra</h1>
 
 <p class="stats">Points: <span id="points">0</span></p>
 <p class="stats">Reboot Points: <span id="rebootPoints">0</span></p>
+<p class="stats">Multiplier: <span id="multiplier">1x</span></p>
 
 <button onclick="clickPoints()">Click!</button><br>
 
-<button onclick="buyClickUpgrade()">Upgrade: +1 per click (<span id="clickCost">10</span>)</button><br>
-<button onclick="buyAuto()">Upgrade: +1 per second (<span id="autoCost">25</span>)</button><br>
+<!-- Click Upgrades -->
+<button onclick="buyClickUpgrade(0)">Click Upgrade I (+1 per click) (<span id="clickCost0">10</span>)</button>
+<div class="progress"><div id="clickProgress0" class="progress-inner"></div></div>
+
+<button onclick="buyClickUpgrade(1)">Click Upgrade II (+2 per click) (<span id="clickCost1">50</span>)</button>
+<div class="progress"><div id="clickProgress1" class="progress-inner"></div></div>
+
+<button onclick="buyClickUpgrade(2)">Click Upgrade III (+5 per click) (<span id="clickCost2">250</span>)</button>
+<div class="progress"><div id="clickProgress2" class="progress-inner"></div></div>
+
+<button onclick="buyClickUpgrade(3)">Click Upgrade IV (+10 per click) (<span id="clickCost3">1000</span>)</button>
+<div class="progress"><div id="clickProgress3" class="progress-inner"></div></div>
+
+<button onclick="buyClickUpgrade(4)">Click Upgrade V (+25 per click) (<span id="clickCost4">5000</span>)</button>
+<div class="progress"><div id="clickProgress4" class="progress-inner"></div></div>
+
+<!-- Auto Upgrades -->
+<button onclick="buyAutoUpgrade(0)">Auto Upgrade I (+1/sec) (<span id="autoCost0">25</span>)</button>
+<div class="progress"><div id="autoProgress0" class="progress-inner"></div></div>
+
+<button onclick="buyAutoUpgrade(1)">Auto Upgrade II (+3/sec) (<span id="autoCost1">100</span>)</button>
+<div class="progress"><div id="autoProgress1" class="progress-inner"></div></div>
+
+<button onclick="buyAutoUpgrade(2)">Auto Upgrade III (+10/sec) (<span id="autoCost2">500</span>)</button>
+<div class="progress"><div id="autoProgress2" class="progress-inner"></div></div>
+
+<button onclick="buyAutoUpgrade(3)">Auto Upgrade IV (+25/sec) (<span id="autoCost3">2000</span>)</button>
+<div class="progress"><div id="autoProgress3" class="progress-inner"></div></div>
+
+<button onclick="buyAutoUpgrade(4)">Auto Upgrade V (+50/sec) (<span id="autoCost4">10000</span>)</button>
+<div class="progress"><div id="autoProgress4" class="progress-inner"></div></div>
+
+<!-- Reboot Upgrades -->
 <button onclick="buyRebootUpgrade()">Reboot Upgrade (+1 permanent boost) (<span id='rebootUpgradeCost'>5</span> RP)</button><br>
+<button onclick="buyMegaUpgrade()">Mega Upgrade (+10 points per click) (<span id='megaUpgradeCost'>10</span> RP)</button><br>
 
 <button onclick="reboot()">Reboot (Reset for Reboot Points)</button>
 
@@ -50,92 +95,130 @@ let points = 0;
 let pointsPerClick = 1;
 let pointsPerSecond = 0;
 
-let clickCost = 10;
-let autoCost = 25;
+let clickCosts = [10,50,250,1000,5000];
+let clickLevels = [0,0,0,0,0];
+
+let autoCosts = [25,100,500,2000,10000];
+let autoLevels = [0,0,0,0,0];
 
 let rebootPoints = 0;
 let rebootUpgradeLevel = 0;
 let rebootUpgradeCost = 5;
 
-// Load from localStorage
-if(localStorage.getItem("simpleIncrementalData")){
-    const data = JSON.parse(localStorage.getItem("simpleIncrementalData"));
+let megaUpgradeLevel = 0;
+let megaUpgradeCost = 10;
+
+let multiplier = 1;
+
+// =================== LOAD GAME ===================
+if(localStorage.getItem("simpleIncrementalUltra")){
+    const data = JSON.parse(localStorage.getItem("simpleIncrementalUltra"));
     points = data.points;
     pointsPerClick = data.pointsPerClick;
     pointsPerSecond = data.pointsPerSecond;
-    clickCost = data.clickCost;
-    autoCost = data.autoCost;
+    clickCosts = data.clickCosts;
+    clickLevels = data.clickLevels;
+    autoCosts = data.autoCosts;
+    autoLevels = data.autoLevels;
     rebootPoints = data.rebootPoints;
     rebootUpgradeLevel = data.rebootUpgradeLevel;
     rebootUpgradeCost = data.rebootUpgradeCost;
+    megaUpgradeLevel = data.megaUpgradeLevel;
+    megaUpgradeCost = data.megaUpgradeCost;
+    multiplier = data.multiplier;
 }
 
 // =================== UPDATE UI ===================
-function update() {
+function update(){
     document.getElementById("points").innerText = formatNumber(points);
-    document.getElementById("clickCost").innerText = formatNumber(clickCost);
-    document.getElementById("autoCost").innerText = formatNumber(autoCost);
     document.getElementById("rebootPoints").innerText = rebootPoints;
-    document.getElementById("rebootUpgradeCost").innerText = rebootUpgradeCost;
+    document.getElementById("multiplier").innerText = multiplier+"x";
+
+    for(let i=0;i<5;i++){
+        document.getElementById("clickCost"+i).innerText = formatNumber(clickCosts[i]);
+        document.getElementById("clickProgress"+i).style.width = Math.min((clickLevels[i]/5)*100,100)+"%";
+
+        document.getElementById("autoCost"+i).innerText = formatNumber(autoCosts[i]);
+        document.getElementById("autoProgress"+i).style.width = Math.min((autoLevels[i]/5)*100,100)+"%";
+    }
     saveGame();
 }
 
-// =================== FORMATTING ===================
+// =================== FORMAT NUMBER ===================
 function formatNumber(num){
-    if(num < 1000000) return num;
-    return num.toExponential(2); // scientific notation for big numbers
+    if(num<1000000) return num;
+    return num.toExponential(2);
 }
 
 // =================== CLICK & UPGRADES ===================
-function clickPoints() {
-    points += pointsPerClick + rebootUpgradeLevel;
+function clickPoints(){
+    let totalClick = pointsPerClick;
+    clickLevels.forEach(lvl=>totalClick += lvl);
+    totalClick += rebootUpgradeLevel + megaUpgradeLevel*10;
+    points += totalClick * multiplier;
     update();
 }
 
-function buyClickUpgrade() {
-    if(points >= clickCost){
-        points -= clickCost;
-        pointsPerClick += 1;
-        clickCost = Math.floor(clickCost * 1.5);
+function buyClickUpgrade(i){
+    if(points>=clickCosts[i] && clickLevels[i]<5){
+        points -= clickCosts[i];
+        clickLevels[i] +=1;
+        clickCosts[i] = Math.floor(clickCosts[i]*1.5);
         update();
     }
 }
 
-function buyAuto() {
-    if(points >= autoCost){
-        points -= autoCost;
-        pointsPerSecond += 1;
-        autoCost = Math.floor(autoCost * 1.6);
+function buyAutoUpgrade(i){
+    if(points>=autoCosts[i] && autoLevels[i]<5){
+        points -= autoCosts[i];
+        autoLevels[i]+=1;
+        autoCosts[i] = Math.floor(autoCosts[i]*1.6);
         update();
     }
 }
 
 function buyRebootUpgrade(){
-    if(rebootPoints >= rebootUpgradeCost){
+    if(rebootPoints>=rebootUpgradeCost){
         rebootPoints -= rebootUpgradeCost;
-        rebootUpgradeLevel += 1;
-        rebootUpgradeCost = Math.floor(rebootUpgradeCost * 1.8);
+        rebootUpgradeLevel +=1;
+        rebootUpgradeCost = Math.floor(rebootUpgradeCost*1.8);
+        multiplier += 0.1;
+        update();
+    }
+}
+
+function buyMegaUpgrade(){
+    if(rebootPoints>=megaUpgradeCost){
+        rebootPoints -= megaUpgradeCost;
+        megaUpgradeLevel +=1;
+        megaUpgradeCost = Math.floor(megaUpgradeCost*2);
+        multiplier +=0.5;
         update();
     }
 }
 
 // =================== AUTO INCREMENT ===================
 setInterval(()=>{
-    points += pointsPerSecond + rebootUpgradeLevel;
+    let totalAuto = pointsPerSecond;
+    autoLevels.forEach(lvl=>totalAuto+=lvl);
+    totalAuto += rebootUpgradeLevel + megaUpgradeLevel*10;
+    points += totalAuto * multiplier;
     update();
 },1000);
 
 // =================== REBOOT ===================
 function reboot(){
-    if(points >= 1000){
-        rebootPoints += 1;
+    if(points>=1000){
+        rebootPoints +=1;
         points = 0;
         pointsPerClick = 1;
         pointsPerSecond = 0;
-        clickCost = 10;
-        autoCost = 25;
+        clickCosts = [10,50,250,1000,5000];
+        clickLevels = [0,0,0,0,0];
+        autoCosts = [25,100,500,2000,10000];
+        autoLevels = [0,0,0,0,0];
         update();
-    } else {
+    }else{
         alert("You need 1000 points to reboot!");
     }
 }
@@ -143,16 +226,12 @@ function reboot(){
 // =================== SAVE GAME ===================
 function saveGame(){
     const data = {
-        points,
-        pointsPerClick,
-        pointsPerSecond,
-        clickCost,
-        autoCost,
-        rebootPoints,
-        rebootUpgradeLevel,
-        rebootUpgradeCost
+        points, pointsPerClick, pointsPerSecond,
+        clickCosts, clickLevels, autoCosts, autoLevels,
+        rebootPoints, rebootUpgradeLevel, rebootUpgradeCost,
+        megaUpgradeLevel, megaUpgradeCost, multiplier
     };
-    localStorage.setItem("simpleIncrementalData", JSON.stringify(data));
+    localStorage.setItem("simpleIncrementalUltra", JSON.stringify(data));
 }
 
 // =================== INITIALIZE ===================
